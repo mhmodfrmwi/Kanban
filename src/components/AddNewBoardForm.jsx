@@ -33,33 +33,36 @@ const AddNewBoardForm = ({
     });
   };
 
-  const updateData = (boardName, newColumnsArray, setData, boardId) => {
+  const updateData = (boardName, newColumnsArray) => {
     setData((prev) => {
-      let newData;
-
       if (boardId) {
-        newData = prev.map((item) => {
-          if (item.id === boardId) {
-            return {
-              ...item,
+        return prev.map((item) =>
+          item.id === boardId
+            ? { ...item, title: boardName, columns: newColumnsArray }
+            : item
+        );
+      } else {
+        if (prev && Array.isArray(prev)) {
+          setSelectedBoardIndex(prev.length);
+          return [
+            ...prev,
+            {
+              id: Date.now(),
               title: boardName,
               columns: newColumnsArray,
-            };
-          }
-          return item;
-        });
-      } else {
-        newData = [
-          ...prev,
-          {
-            id: Date.now(),
-            title: boardName,
-            columns: newColumnsArray,
-          },
-        ];
-        setSelectedBoardIndex(prev.length);
+            },
+          ];
+        } else {
+          setSelectedBoardIndex(0); // Assuming this is the first item if prev is undefined or not an array
+          return [
+            {
+              id: Date.now(),
+              title: boardName,
+              columns: newColumnsArray,
+            },
+          ];
+        }
       }
-      return newData;
     });
   };
 
@@ -70,7 +73,7 @@ const AddNewBoardForm = ({
     const newColumnsArray = createNewColumnsArray(
       formData,
       columnsArray,
-      boardId,
+      boardId
     );
 
     updateData(boardName, newColumnsArray, setData, boardId);
