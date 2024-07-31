@@ -58,74 +58,109 @@ const Workspace = () => {
 
   const onDragEndHandler = (event) => {
     const { active, over } = event;
+
+    if (!over) return; // If not dropped over any column
+    if (active.id === over.id) return; // If no change in position
+
     const activeId = active.id;
     const overId = over.id;
+
     const overColumnId = over.data.current.columnId;
     const activeColumnId = active.data.current.columnId;
 
-    if (activeId === overId) return;
+    if (!overColumnId || !activeColumnId) return;
 
     if (activeColumnId === overColumnId) {
-      const newColumns = columns.map((column) => {
-        if (column.id === activeColumnId) {
-          const activeIdIndex = column.tasks.findIndex(
-            (task) => task.id === activeId
-          );
-          const overIdIndex = column.tasks.findIndex(
-            (task) => task.id === overId
-          );
-          const tasks = arrayMove(column.tasks, activeIdIndex, overIdIndex);
+      // If dropped within the same column, just reorder
+      const column = columns.find((col) => col.id === activeColumnId);
+      const oldIndex = column.tasks.findIndex((task) => task.id === activeId);
+      const newIndex = column.tasks.findIndex((task) => task.id === overId);
 
-          return { ...column, tasks };
-        }
-        return column;
-      });
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const updatedTasks = arrayMove(column.tasks, oldIndex, newIndex);
+        const newColumns = columns.map((col) =>
+          col.id === activeColumnId ? { ...col, tasks: updatedTasks } : col
+        );
 
-      setData((prev) =>
-        produce(prev, (draft) => {
-          draft[selectedBoardIndex].columns = newColumns;
-        })
+        setData((prev) =>
+          produce(prev, (draft) => {
+            draft[selectedBoardIndex].columns = newColumns;
+          })
+        );
+      }
+    } else {
+      // If dropped into a different column
+      const activeColumn = columns.find((col) => col.id === activeColumnId);
+      const overColumn = columns.find((col) => col.id === overColumnId);
+
+      const activeTask = activeColumn.tasks.find(
+        (task) => task.id === activeId
       );
+
+      if (activeTask) {
+        const updatedOverColumnTasks = overColumn.tasks
+          ? [...overColumn.tasks, activeTask]
+          : [activeTask];
+        const updatedActiveColumnTasks = activeColumn.tasks.filter(
+          (task) => task.id !== activeId
+        );
+
+        const newColumns = columns.map((col) => {
+          if (col.id === activeColumnId) {
+            return { ...col, tasks: updatedActiveColumnTasks };
+          }
+          if (col.id === overColumnId) {
+            return { ...col, tasks: updatedOverColumnTasks };
+          }
+          return col;
+        });
+
+        setData((prev) =>
+          produce(prev, (draft) => {
+            draft[selectedBoardIndex].columns = newColumns;
+          })
+        );
+      }
     }
   };
 
   const onDragOverHandler = (event) => {
     const { active, over } = event;
+    if (!over) return;
+
     const activeId = active.id;
+    const overColumnId = over.data.current?.columnId;
+    const activeColumnId = active.data.current?.columnId;
 
-    const overColumnId = over?.data?.current?.columnId;
-    const activeColumnId = active?.data?.current?.columnId;
+    if (!overColumnId || !activeColumnId || activeColumnId === overColumnId)
+      return;
 
-    if (overColumnId && activeColumnId !== overColumnId) {
-      const newColumns = columns.map((column) => {
-        // if the column is the column that the card is dragged to then add the task to the column
-        if (column.id === overColumnId) {
-          // get the active task from the active column's tasks
-          const activeTask = columns
-            .find((column) => column.id === activeColumnId)
-            .tasks.find((task) => task.id === activeId);
-          // add the active task to the end of the new column's tasks because the dnd lib will handle the reordering
-          const tasks = [...column.tasks, activeTask];
+    const activeColumn = columns.find((column) => column.id === activeColumnId);
+    const activeTask = activeColumn?.tasks.find((task) => task.id === activeId);
 
-          return { ...column, tasks };
-        }
+    if (!activeTask) return;
 
-        // if the column is the column that the card is dragged from then remove the task from the column
-        if (column.id === activeColumnId) {
-          const tasks = column.tasks.filter((task) => task.id !== activeId);
+    const newColumns = columns.map((column) => {
+      if (column.id === overColumnId) {
+        return {
+          ...column,
+          tasks: [...column.tasks, activeTask],
+        };
+      }
+      if (column.id === activeColumnId) {
+        return {
+          ...column,
+          tasks: column.tasks.filter((task) => task.id !== activeId),
+        };
+      }
+      return column;
+    });
 
-          return { ...column, tasks };
-        }
-
-        return column;
-      });
-
-      setData((prev) =>
-        produce(prev, (draft) => {
-          draft[selectedBoardIndex].columns = newColumns;
-        })
-      );
-    }
+    setData((prev) =>
+      produce(prev, (draft) => {
+        draft[selectedBoardIndex].columns = newColumns;
+      })
+    );
   };
 
   return (
