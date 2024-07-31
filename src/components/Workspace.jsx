@@ -26,7 +26,7 @@ const Workspace = () => {
       activationConstraint: {
         distance: 10,
       },
-    }),
+    })
   );
 
   const createNewColumn = (num) => ({
@@ -42,7 +42,7 @@ const Workspace = () => {
     setData((prev) =>
       produce(prev, (draft) => {
         draft[selectedBoardIndex].columns.push(newColumn);
-      }),
+      })
     );
   };
 
@@ -51,7 +51,7 @@ const Workspace = () => {
 
     if (!columns || columns.length === 0) return tasksIds;
     for (let column of columns) {
-      tasksIds = [...tasksIds, ...column.tasks.map((task) => task.id)];
+      tasksIds = [...tasksIds, ...(column.tasks || []).map((task) => task.id)];
     }
     return tasksIds;
   }, [columns]);
@@ -69,10 +69,10 @@ const Workspace = () => {
       const newColumns = columns.map((column) => {
         if (column.id === activeColumnId) {
           const activeIdIndex = column.tasks.findIndex(
-            (task) => task.id === activeId,
+            (task) => task.id === activeId
           );
           const overIdIndex = column.tasks.findIndex(
-            (task) => task.id === overId,
+            (task) => task.id === overId
           );
           const tasks = arrayMove(column.tasks, activeIdIndex, overIdIndex);
 
@@ -84,7 +84,7 @@ const Workspace = () => {
       setData((prev) =>
         produce(prev, (draft) => {
           draft[selectedBoardIndex].columns = newColumns;
-        }),
+        })
       );
     }
   };
@@ -123,7 +123,7 @@ const Workspace = () => {
       setData((prev) =>
         produce(prev, (draft) => {
           draft[selectedBoardIndex].columns = newColumns;
-        }),
+        })
       );
     }
   };
